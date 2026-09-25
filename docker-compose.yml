@@ -1,0 +1,36 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: users-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root1234}
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./src/main/resources/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 --protocol=tcp -uroot -p$${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  user-service:
+    build: .
+    container_name: user-service
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: crud_usuarios
+      DB_USERNAME: root
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root1234}
+      JWT_SECRET: ${JWT_SECRET:-ZGV2ZWxvcG1lbnQtb25seS1qd3Qtc2VjcmV0LW11c3QtYmUtcmVwbGFjZWQ=}
+    ports:
+      - "8080:8080"
+    restart: on-failure
+
+volumes:
+  mysql-data:
