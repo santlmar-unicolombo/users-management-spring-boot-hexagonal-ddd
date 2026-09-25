@@ -97,8 +97,7 @@ public class EmailNotificationService {
     try {
       emailSenderPort.send(destination);
     } catch (final EmailSenderException senderException) {
-      log.warn(LOG_SEND_FAILED, senderException.getMessage(), senderException);
-      throw senderException;
+      log.warn(LOG_SEND_FAILED, senderException.getClass().getSimpleName());
     }
   }
 }

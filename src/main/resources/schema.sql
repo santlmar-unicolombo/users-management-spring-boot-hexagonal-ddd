@@ -21,12 +21,12 @@ CREATE TABLE IF NOT EXISTS users (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Usuario administrador inicial (password: Admin1234!)
-INSERT INTO users (id, name, email, password, role, status)
+INSERT IGNORE INTO users (id, name, email, password, role, status)
 VALUES (
     '00000000-0000-0000-0000-000000000001',
     'Administrador',
     'admin@example.com',
-    '$2a$12$placeholderHashReplaceWithRealBCryptHash',
+    '$2a$12$2LhOnh.0gBxsdVzub7aa4egk51GL0v5TZKFYS9dfkNK6WeRaMf/pq',
     'ADMIN',
     'ACTIVE'
 );

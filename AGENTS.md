@@ -55,7 +55,7 @@ mvn verify
 # Run the application (requires MySQL + SMTP configured in application.properties)
 mvn spring-boot:run
 # or
-java -jar target/users-management-2.0.0-SNAPSHOT.jar
+java -jar target/users-management-2.1.0.jar
 ```
 
 ## Coding Conventions (non-negotiable — from `spec/reglas-de-codificacion-java.md`)
