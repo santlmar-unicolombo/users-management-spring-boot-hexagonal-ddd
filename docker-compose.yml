@@ -1,16 +1,17 @@
 services:
-  mysql:
-    image: mysql:8.4
-    container_name: users-mysql
+  postgres:
+    image: postgres:16
+    container_name: users-postgres
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root1234}
+      POSTGRES_DB: crud_usuarios
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     ports:
-      - "3307:3306"
+      - "5433:5432"
     volumes:
-      - mysql-data:/var/lib/mysql
-      - ./src/main/resources/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 --protocol=tcp -uroot -p$${MYSQL_ROOT_PASSWORD} --silent"]
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -d crud_usuarios"]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -19,18 +20,18 @@ services:
     build: .
     container_name: user-service
     depends_on:
-      mysql:
+      postgres:
         condition: service_healthy
     environment:
-      DB_HOST: mysql
-      DB_PORT: 3306
+      DB_HOST: postgres
+      DB_PORT: 5432
       DB_NAME: crud_usuarios
-      DB_USERNAME: root
-      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root1234}
+      DB_USERNAME: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       JWT_SECRET: ${JWT_SECRET:-ZGV2ZWxvcG1lbnQtb25seS1qd3Qtc2VjcmV0LW11c3QtYmUtcmVwbGFjZWQ=}
     ports:
       - "8080:8080"
     restart: on-failure
 
 volumes:
-  mysql-data:
+  postgres-data:
