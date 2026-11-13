@@ -4,10 +4,12 @@ import com.jcaa.usersmanagement.application.port.out.ProfilePhotoStoragePort;
 import com.jcaa.usersmanagement.domain.exception.ProfilePhotoStorageException;
 import com.jcaa.usersmanagement.domain.model.ProfilePhotoModel;
 import com.jcaa.usersmanagement.domain.valueobject.ProfilePhotoKey;
+import java.util.Objects;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
+import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -29,6 +31,8 @@ public class BackblazeB2ProfilePhotoStorageAdapter implements ProfilePhotoStorag
 
   private static final String LOG_UPLOADED = "[B2] objeto subido. bytes={}";
   private static final String LOG_FAILURE = "[B2] operacion {} fallida. Causa: {}";
+  private static final String LOG_S3_FAILURE =
+      "[B2] operacion {} fallida. HTTP {} codigo={} mensaje={}";
   private static final String OPERATION_UPLOAD = "upload";
   private static final String OPERATION_DOWNLOAD = "download";
   private static final String OPERATION_DELETE = "delete";
@@ -55,7 +59,7 @@ public class BackblazeB2ProfilePhotoStorageAdapter implements ProfilePhotoStorag
       s3Client.putObject(request, RequestBody.fromBytes(photo.getContent()));
       log.info(LOG_UPLOADED, photo.getSizeInBytes());
     } catch (final SdkException exception) {
-      log.warn(LOG_FAILURE, OPERATION_UPLOAD, exception.getClass().getSimpleName());
+      logFailure(OPERATION_UPLOAD, exception);
       throw ProfilePhotoStorageException.becauseUploadFailed(exception);
     }
   }
@@ -70,7 +74,7 @@ public class BackblazeB2ProfilePhotoStorageAdapter implements ProfilePhotoStorag
     } catch (final NoSuchKeyException notFound) {
       return Optional.empty();
     } catch (final SdkException exception) {
-      log.warn(LOG_FAILURE, OPERATION_DOWNLOAD, exception.getClass().getSimpleName());
+      logFailure(OPERATION_DOWNLOAD, exception);
       throw ProfilePhotoStorageException.becauseDownloadFailed(exception);
     }
   }
@@ -82,8 +86,23 @@ public class BackblazeB2ProfilePhotoStorageAdapter implements ProfilePhotoStorag
     try {
       s3Client.deleteObject(request);
     } catch (final SdkException exception) {
-      log.warn(LOG_FAILURE, OPERATION_DELETE, exception.getClass().getSimpleName());
+      logFailure(OPERATION_DELETE, exception);
       throw ProfilePhotoStorageException.becauseDeleteFailed(exception);
     }
+  }
+
+  /** Registra el código de error de B2 (sin datos del usuario) para diagnosticar la configuración. */
+  private static void logFailure(final String operation, final SdkException exception) {
+    if (exception instanceof AwsServiceException serviceException
+        && Objects.nonNull(serviceException.awsErrorDetails())) {
+      log.warn(
+          LOG_S3_FAILURE,
+          operation,
+          serviceException.statusCode(),
+          serviceException.awsErrorDetails().errorCode(),
+          serviceException.awsErrorDetails().errorMessage());
+      return;
+    }
+    log.warn(LOG_FAILURE, operation, exception.getMessage());
   }
 }
