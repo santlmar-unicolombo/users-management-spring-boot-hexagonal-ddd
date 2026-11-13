@@ -38,6 +38,7 @@ class CreateUserServiceTest {
   @Mock private SaveUserPort saveUserPort;
   @Mock private GetUserByEmailPort getUserByEmailPort;
   @Mock private EmailNotificationService emailNotificationService;
+  @Mock private UserReadModelSyncService userReadModelSyncService;
 
   private CreateUserService service;
 
@@ -49,6 +50,7 @@ class CreateUserServiceTest {
               saveUserPort,
               getUserByEmailPort,
               emailNotificationService,
+              userReadModelSyncService,
               validatorFactory.getValidator());
     }
   }
@@ -85,6 +87,7 @@ class CreateUserServiceTest {
 
     verify(saveUserPort).save(any(UserModel.class));
     verify(emailNotificationService).notifyUserCreated(savedUser, "Pass1234");
+    verify(userReadModelSyncService).onUserChanged(savedUser);
   }
 
   // ── email duplicado

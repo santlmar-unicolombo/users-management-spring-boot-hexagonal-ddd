@@ -25,6 +25,7 @@ public class CreateUserService implements CreateUserUseCase {
   private final SaveUserPort saveUserPort;
   private final GetUserByEmailPort getUserByEmailPort;
   private final EmailNotificationService emailNotificationService;
+  private final UserReadModelSyncService userReadModelSyncService;
   private final Validator validator;
 
   @Override
@@ -38,6 +39,7 @@ public class CreateUserService implements CreateUserUseCase {
     final UserModel savedUser = saveUserPort.save(userToSave);
 
     emailNotificationService.notifyUserCreated(savedUser, command.password());
+    userReadModelSyncService.onUserChanged(savedUser);
 
     return savedUser;
   }

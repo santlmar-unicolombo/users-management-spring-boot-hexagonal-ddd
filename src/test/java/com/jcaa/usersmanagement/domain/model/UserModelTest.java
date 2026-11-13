@@ -4,10 +4,12 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.jcaa.usersmanagement.domain.enums.UserRole;
 import com.jcaa.usersmanagement.domain.enums.UserStatus;
+import com.jcaa.usersmanagement.domain.valueobject.ProfilePhotoKey;
 import com.jcaa.usersmanagement.domain.valueobject.UserEmail;
 import com.jcaa.usersmanagement.domain.valueobject.UserId;
 import com.jcaa.usersmanagement.domain.valueobject.UserName;
 import com.jcaa.usersmanagement.domain.valueobject.UserPassword;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -98,5 +100,29 @@ class UserModelTest {
             assertEquals(UserStatus.INACTIVE, deactivated.getStatus(), "status debe ser INACTIVE"),
         () -> assertSame(userId, deactivated.getId(), "id debe preservarse"),
         () -> assertEquals(UserRole.ADMIN, deactivated.getRole(), "role debe preservarse"));
+  }
+
+  // ── foto de perfil
+
+  @Test
+  @DisplayName("withProfilePhoto() / withoutProfilePhoto() asignan y quitan la foto sin mutar")
+  void shouldAssignAndRemoveProfilePhoto() {
+    // Arrange
+    final UserModel user =
+        new UserModel(userId, userName, userEmail, password, UserRole.MEMBER, UserStatus.ACTIVE);
+    final ProfilePhotoKey key = new ProfilePhotoKey("profile-photos/u-001/photo.png");
+
+    // Act
+    final UserModel withPhoto = user.withProfilePhoto(key);
+    final UserModel withoutPhoto = withPhoto.withoutProfilePhoto();
+
+    // Assert
+    assertAll(
+        "foto de perfil",
+        () -> assertFalse(user.hasProfilePhoto(), "el original no cambia"),
+        () -> assertEquals(Optional.of(key), withPhoto.getProfilePhotoKey()),
+        () -> assertTrue(withoutPhoto.getProfilePhotoKey().isEmpty()),
+        () -> assertEquals(key, withPhoto.activate().getProfilePhotoKey().orElseThrow(),
+            "activate() conserva la foto"));
   }
 }

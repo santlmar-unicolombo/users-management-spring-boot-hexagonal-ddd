@@ -7,5 +7,6 @@ public record UserEntity(
     String password,
     String role,
     String status,
+    String profilePhotoKey,
     String createdAt,
     String updatedAt) {}

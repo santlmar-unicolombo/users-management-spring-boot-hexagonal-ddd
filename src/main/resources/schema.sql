@@ -16,6 +16,11 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Foto de perfil: key del objeto en el bucket privado de Backblaze B2 (Guia 9).
+-- La imagen NO se guarda en la base de datos, solo su referencia.
+-- ADD COLUMN IF NOT EXISTS mantiene el script idempotente para bases ya creadas.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_photo_key VARCHAR(255) NULL;
+
 -- Usuario administrador inicial (password: Admin1234!)
 INSERT INTO users (id, name, email, password, role, status)
 VALUES (

@@ -42,6 +42,7 @@ class UpdateUserServiceTest {
   @Mock private GetUserByIdPort getUserByIdPort;
   @Mock private GetUserByEmailPort getUserByEmailPort;
   @Mock private EmailNotificationService emailNotificationService;
+  @Mock private UserReadModelSyncService userReadModelSyncService;
 
   private UpdateUserService service;
 
@@ -60,6 +61,7 @@ class UpdateUserServiceTest {
               getUserByIdPort,
               getUserByEmailPort,
               emailNotificationService,
+              userReadModelSyncService,
               validatorFactory.getValidator());
     }
 
@@ -93,6 +95,7 @@ class UpdateUserServiceTest {
     assertNotNull(result);
     verify(updateUserPort).update(any(UserModel.class));
     verify(emailNotificationService).notifyUserUpdated(existingUser);
+    verify(userReadModelSyncService).onUserChanged(existingUser);
   }
 
   // ── usuario no encontrado

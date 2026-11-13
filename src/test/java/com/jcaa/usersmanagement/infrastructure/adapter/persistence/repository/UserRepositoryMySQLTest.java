@@ -8,6 +8,7 @@ import com.jcaa.usersmanagement.domain.enums.UserRole;
 import com.jcaa.usersmanagement.domain.enums.UserStatus;
 import com.jcaa.usersmanagement.domain.exception.UserNotFoundException;
 import com.jcaa.usersmanagement.domain.model.UserModel;
+import com.jcaa.usersmanagement.domain.valueobject.ProfilePhotoKey;
 import com.jcaa.usersmanagement.domain.valueobject.UserEmail;
 import com.jcaa.usersmanagement.domain.valueobject.UserId;
 import com.jcaa.usersmanagement.domain.valueobject.UserName;
@@ -17,6 +18,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.List;
 import java.util.Optional;
 import javax.sql.DataSource;
@@ -88,6 +90,7 @@ class UserRepositoryMySQLTest {
     when(resultSet.getString("password")).thenReturn(HASH);
     when(resultSet.getString("role")).thenReturn(ROLE);
     when(resultSet.getString("status")).thenReturn(STATUS);
+    when(resultSet.getString("profile_photo_key")).thenReturn(null);
     when(resultSet.getString("created_at")).thenReturn(CREATED_AT);
     when(resultSet.getString("updated_at")).thenReturn(UPDATED_AT);
   }
@@ -424,5 +427,53 @@ class UserRepositoryMySQLTest {
         PersistenceException.class,
         () -> repository.delete(userId),
         "must throw PersistenceException when DELETE raises SQLException");
+  }
+
+  // ── updateProfilePhoto()
+
+  @Test
+  @DisplayName("updateProfilePhoto() guarda la key de la foto y retorna el usuario actualizado")
+  void shouldUpdateProfilePhotoKey() throws SQLException {
+    // Arrange
+    final ProfilePhotoKey key = new ProfilePhotoKey("profile-photos/u-001/photo.png");
+    configureStatementAndResultSet();
+    when(resultSet.next()).thenReturn(true);
+    configureResultSetRow();
+
+    // Act
+    repository.updateProfilePhoto(userModel.withProfilePhoto(key));
+
+    // Assert
+    verify(statement).setString(1, key.value());
+    verify(statement).setString(2, ID);
+    verify(statement).executeUpdate();
+  }
+
+  @Test
+  @DisplayName("updateProfilePhoto() deja la columna en NULL cuando el usuario no tiene foto")
+  void shouldClearProfilePhotoKey() throws SQLException {
+    // Arrange
+    configureStatementAndResultSet();
+    when(resultSet.next()).thenReturn(true);
+    configureResultSetRow();
+
+    // Act
+    repository.updateProfilePhoto(userModel);
+
+    // Assert
+    verify(statement).setNull(1, Types.VARCHAR);
+    verify(statement).setString(2, ID);
+  }
+
+  @Test
+  @DisplayName("updateProfilePhoto() lanza PersistenceException cuando el UPDATE falla")
+  void shouldThrowWhenProfilePhotoUpdateFails() throws SQLException {
+    // Arrange
+    when(dataSource.getConnection()).thenReturn(connection);
+    when(connection.prepareStatement(anyString())).thenReturn(statement);
+    when(statement.executeUpdate()).thenThrow(new SQLException("Update failed"));
+
+    // Act + Assert
+    assertThrows(PersistenceException.class, () -> repository.updateProfilePhoto(userModel));
   }
 }

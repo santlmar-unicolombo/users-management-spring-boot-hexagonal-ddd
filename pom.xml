@@ -26,7 +26,21 @@
     <!-- Declarativas: Mockito y Jacoco siguen siendo explícitas para tener control -->
     <mockito.version>5.15.2</mockito.version>
     <jacoco.version>0.8.11</jacoco.version>
+    <!-- AWS SDK v2: cliente S3 usado contra el endpoint compatible de Backblaze B2 (Guia 9) -->
+    <aws.sdk.version>2.41.24</aws.sdk.version>
   </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>software.amazon.awssdk</groupId>
+        <artifactId>bom</artifactId>
+        <version>${aws.sdk.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
   <dependencies>
 
@@ -108,6 +122,32 @@
       <version>${jjwt.version}</version>
       <scope>runtime</scope>
     </dependency>
+
+    <!-- ======================================================== -->
+    <!-- Integraciones cloud (Guias 9, 10 y 11)                     -->
+    <!-- ======================================================== -->
+
+    <!-- Backblaze B2 via API compatible con S3 (version gestionada por el BOM de AWS).
+         Se excluye el cliente HTTP asincrono (Netty): solo se usa el cliente sincrono. -->
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>s3</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>software.amazon.awssdk</groupId>
+          <artifactId>netty-nio-client</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+    <!-- Valkey/Redis: Jedis, la libreria del "Quick connect" de Aiven para Java
+         (version gestionada por el BOM de Spring Boot) -->
+    <dependency>
+      <groupId>redis.clients</groupId>
+      <artifactId>jedis</artifactId>
+    </dependency>
+
+    <!-- OpenSearch: se consume su API REST con RestClient (spring-web), sin dependencias extra -->
 
     <!-- SpringDoc OpenAPI — Swagger UI en /swagger-ui.html -->
     <dependency>

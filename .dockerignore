@@ -4,3 +4,4 @@ target/
 .idea/
 *.iml
 package-lock.json
+.env

@@ -4,9 +4,11 @@ import com.jcaa.usersmanagement.application.service.dto.command.CreateUserComman
 import com.jcaa.usersmanagement.application.service.dto.command.DeleteUserCommand;
 import com.jcaa.usersmanagement.application.service.dto.command.UpdateUserCommand;
 import com.jcaa.usersmanagement.application.service.dto.query.GetUserByIdQuery;
+import com.jcaa.usersmanagement.application.service.dto.query.SearchUsersQuery;
 import com.jcaa.usersmanagement.domain.enums.UserRole;
 import com.jcaa.usersmanagement.domain.enums.UserStatus;
 import com.jcaa.usersmanagement.domain.model.UserModel;
+import com.jcaa.usersmanagement.domain.model.UserSearchCriteria;
 import com.jcaa.usersmanagement.domain.valueobject.UserEmail;
 import com.jcaa.usersmanagement.domain.valueobject.UserId;
 import com.jcaa.usersmanagement.domain.valueobject.UserName;
@@ -48,9 +50,21 @@ public class UserApplicationMapper {
     return new UserId(command.id());
   }
 
+  public UserSearchCriteria fromSearchQueryToCriteria(final SearchUsersQuery query) {
+    return new UserSearchCriteria(
+        query.text(),
+        isBlank(query.role()) ? null : UserRole.fromString(query.role()),
+        isBlank(query.status()) ? null : UserStatus.fromString(query.status()),
+        query.size());
+  }
+
+  private boolean isBlank(final String value) {
+    return Objects.isNull(value) || value.isBlank();
+  }
+
   private UserPassword resolvePassword(
       final String newPlainPassword, final UserPassword currentPassword) {
-    if (Objects.isNull(newPlainPassword) || newPlainPassword.isBlank()) {
+    if (isBlank(newPlainPassword)) {
       return currentPassword;
     }
     return UserPassword.fromPlainText(newPlainPassword);

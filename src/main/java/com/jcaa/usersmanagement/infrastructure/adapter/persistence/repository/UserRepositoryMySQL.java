@@ -6,8 +6,10 @@ import com.jcaa.usersmanagement.application.port.out.GetUserByEmailPort;
 import com.jcaa.usersmanagement.application.port.out.GetUserByIdPort;
 import com.jcaa.usersmanagement.application.port.out.SaveUserPort;
 import com.jcaa.usersmanagement.application.port.out.UpdateUserPort;
+import com.jcaa.usersmanagement.application.port.out.UpdateUserProfilePhotoPort;
 import com.jcaa.usersmanagement.domain.exception.UserNotFoundException;
 import com.jcaa.usersmanagement.domain.model.UserModel;
+import com.jcaa.usersmanagement.domain.valueobject.ProfilePhotoKey;
 import com.jcaa.usersmanagement.domain.valueobject.UserEmail;
 import com.jcaa.usersmanagement.domain.valueobject.UserId;
 import com.jcaa.usersmanagement.infrastructure.adapter.persistence.dto.UserPersistenceDto;
@@ -22,6 +24,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,7 +37,8 @@ public class UserRepositoryMySQL
         GetUserByIdPort,
         GetUserByEmailPort,
         GetAllUsersPort,
-        DeleteUserPort {
+        DeleteUserPort,
+        UpdateUserProfilePhotoPort {
 
   private static final String SQL_INSERT =
       "INSERT INTO users "
@@ -45,18 +49,21 @@ public class UserRepositoryMySQL
       "UPDATE users SET name = ?, email = ?, password = ?, role = ?, status = ?, updated_at = NOW() "
       + "WHERE id = ?";
 
+  private static final String SQL_UPDATE_PROFILE_PHOTO =
+      "UPDATE users SET profile_photo_key = ?, updated_at = NOW() WHERE id = ?";
+
   private static final String SQL_SELECT_BY_ID =
-      "SELECT id, name, email, password, role, status, created_at, updated_at "
+      "SELECT id, name, email, password, role, status, profile_photo_key, created_at, updated_at "
       + "FROM users "
       + "WHERE id = ? LIMIT 1";
 
   private static final String SQL_SELECT_BY_EMAIL =
-      "SELECT id, name, email, password, role, status, created_at, updated_at "
+      "SELECT id, name, email, password, role, status, profile_photo_key, created_at, updated_at "
       + "FROM users "
       + "WHERE email = ? LIMIT 1";
 
   private static final String SQL_SELECT_ALL =
-      "SELECT id, name, email, password, role, status, created_at, updated_at "
+      "SELECT id, name, email, password, role, status, profile_photo_key, created_at, updated_at "
       + "FROM users "
       + "ORDER BY name ASC";
 
@@ -77,6 +84,25 @@ public class UserRepositoryMySQL
   public UserModel update(final UserModel user) {
     final UserPersistenceDto dto = UserPersistenceMapper.fromModelToDto(user);
     executeUpdate(dto);
+    return findByIdOrFail(user.getId());
+  }
+
+  @Override
+  public UserModel updateProfilePhoto(final UserModel user) {
+    try (final Connection connection = dataSource.getConnection();
+         final PreparedStatement statement =
+             connection.prepareStatement(SQL_UPDATE_PROFILE_PHOTO)) {
+      final Optional<ProfilePhotoKey> profilePhotoKey = user.getProfilePhotoKey();
+      if (profilePhotoKey.isPresent()) {
+        statement.setString(1, profilePhotoKey.get().value());
+      } else {
+        statement.setNull(1, Types.VARCHAR);
+      }
+      statement.setString(2, user.getId().value());
+      statement.executeUpdate();
+    } catch (final SQLException exception) {
+      throw PersistenceException.becauseProfilePhotoUpdateFailed(user.getId().value(), exception);
+    }
     return findByIdOrFail(user.getId());
   }
 

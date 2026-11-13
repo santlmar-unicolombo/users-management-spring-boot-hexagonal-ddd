@@ -7,6 +7,7 @@ import static org.mockito.Mockito.*;
 import com.jcaa.usersmanagement.domain.enums.UserRole;
 import com.jcaa.usersmanagement.domain.enums.UserStatus;
 import com.jcaa.usersmanagement.domain.model.UserModel;
+import com.jcaa.usersmanagement.domain.valueobject.ProfilePhotoKey;
 import com.jcaa.usersmanagement.domain.valueobject.UserEmail;
 import com.jcaa.usersmanagement.domain.valueobject.UserId;
 import com.jcaa.usersmanagement.domain.valueobject.UserName;
@@ -16,6 +17,7 @@ import com.jcaa.usersmanagement.infrastructure.adapter.persistence.entity.UserEn
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -59,7 +61,8 @@ class UserPersistenceMapperTest {
             UserRole.ADMIN,
             UserStatus.ACTIVE);
 
-    userEntity = new UserEntity(ID, NAME, EMAIL, HASH, ROLE, STATUS, CREATED_AT, UPDATED_AT);
+    userEntity =
+        new UserEntity(ID, NAME, EMAIL, HASH, ROLE, STATUS, null, CREATED_AT, UPDATED_AT);
   }
 
   // ── fromModelToDto()
@@ -98,13 +101,32 @@ class UserPersistenceMapperTest {
         () -> assertEquals(NAME, result.getName().value(), "name"),
         () -> assertEquals(EMAIL, result.getEmail().value(), "email"),
         () -> assertEquals(UserRole.ADMIN, result.getRole(), "role"),
-        () -> assertEquals(UserStatus.ACTIVE, result.getStatus(), "status"));
+        () -> assertEquals(UserStatus.ACTIVE, result.getStatus(), "status"),
+        () -> assertFalse(result.hasProfilePhoto(), "sin foto cuando la columna es NULL"));
+  }
+
+  @Test
+  @DisplayName("fromEntityToModel() mapea la key de la foto de perfil cuando existe")
+  void shouldMapProfilePhotoKeyWhenPresent() {
+    // Arrange
+    final String photoKey = "profile-photos/u-001/photo.png";
+    final UserEntity entityWithPhoto =
+        new UserEntity(ID, NAME, EMAIL, HASH, ROLE, STATUS, photoKey, CREATED_AT, UPDATED_AT);
+
+    // Act
+    final UserModel result = UserPersistenceMapper.fromEntityToModel(entityWithPhoto);
+
+    // Assert
+    assertEquals(
+        Optional.of(new ProfilePhotoKey(photoKey)),
+        result.getProfilePhotoKey(),
+        "debe exponer la key de la foto");
   }
 
   // ── fromResultSetToEntity() — happy path
 
   @Test
-  @DisplayName("fromResultSetToEntity() reads all eight columns from the ResultSet")
+  @DisplayName("fromResultSetToEntity() reads all columns from the ResultSet")
   void shouldReadAllColumnsFromResultSet() throws SQLException {
     // Arrange
     when(resultSet.getString("id")).thenReturn(ID);
@@ -113,6 +135,7 @@ class UserPersistenceMapperTest {
     when(resultSet.getString("password")).thenReturn(HASH);
     when(resultSet.getString("role")).thenReturn(ROLE);
     when(resultSet.getString("status")).thenReturn(STATUS);
+    when(resultSet.getString("profile_photo_key")).thenReturn(null);
     when(resultSet.getString("created_at")).thenReturn(CREATED_AT);
     when(resultSet.getString("updated_at")).thenReturn(UPDATED_AT);
 
@@ -175,6 +198,7 @@ class UserPersistenceMapperTest {
     when(resultSet.getString("password")).thenReturn(HASH, HASH);
     when(resultSet.getString("role")).thenReturn(ROLE, "MEMBER");
     when(resultSet.getString("status")).thenReturn(STATUS, "PENDING");
+    when(resultSet.getString("profile_photo_key")).thenReturn(null, "profile-photos/u-002/a.png");
     when(resultSet.getString("created_at")).thenReturn(CREATED_AT, CREATED_AT);
     when(resultSet.getString("updated_at")).thenReturn(UPDATED_AT, UPDATED_AT);
 

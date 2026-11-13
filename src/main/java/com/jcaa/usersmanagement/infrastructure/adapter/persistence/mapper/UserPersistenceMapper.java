@@ -3,6 +3,7 @@ package com.jcaa.usersmanagement.infrastructure.adapter.persistence.mapper;
 import com.jcaa.usersmanagement.domain.enums.UserRole;
 import com.jcaa.usersmanagement.domain.enums.UserStatus;
 import com.jcaa.usersmanagement.domain.model.UserModel;
+import com.jcaa.usersmanagement.domain.valueobject.ProfilePhotoKey;
 import com.jcaa.usersmanagement.domain.valueobject.UserEmail;
 import com.jcaa.usersmanagement.domain.valueobject.UserId;
 import com.jcaa.usersmanagement.domain.valueobject.UserName;
@@ -15,6 +16,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @UtilityClass
 public class UserPersistenceMapper {
@@ -39,18 +41,27 @@ public class UserPersistenceMapper {
         resultSet.getString("password"),
         resultSet.getString("role"),
         resultSet.getString("status"),
+        resultSet.getString("profile_photo_key"),
         resultSet.getString("created_at"),
         resultSet.getString("updated_at"));
   }
 
   public UserModel fromEntityToModel(final UserEntity entity) {
-    return new UserModel(
-        new UserId(entity.id()),
-        new UserName(entity.name()),
-        new UserEmail(entity.email()),
-        UserPassword.fromHash(entity.password()),
-        UserRole.fromString(entity.role()),
-        UserStatus.fromString(entity.status()));
+    final UserModel user =
+        new UserModel(
+            new UserId(entity.id()),
+            new UserName(entity.name()),
+            new UserEmail(entity.email()),
+            UserPassword.fromHash(entity.password()),
+            UserRole.fromString(entity.role()),
+            UserStatus.fromString(entity.status()));
+    return hasProfilePhoto(entity)
+        ? user.withProfilePhoto(new ProfilePhotoKey(entity.profilePhotoKey()))
+        : user;
+  }
+
+  private boolean hasProfilePhoto(final UserEntity entity) {
+    return Objects.nonNull(entity.profilePhotoKey()) && !entity.profilePhotoKey().isBlank();
   }
 
   public UserModel fromResultSetToModel(final ResultSet resultSet) throws SQLException {

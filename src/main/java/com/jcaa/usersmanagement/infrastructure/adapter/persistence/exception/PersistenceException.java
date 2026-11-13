@@ -4,6 +4,8 @@ public final class PersistenceException extends RuntimeException {
 
   private static final String MESSAGE_SAVE = "Failed to save user with ID: '%s'.";
   private static final String MESSAGE_UPDATE = "Failed to update user with ID: '%s'.";
+  private static final String MESSAGE_PROFILE_PHOTO =
+      "Failed to update the profile photo of user with ID: '%s'.";
   private static final String MESSAGE_FIND = "Failed to find user with ID: '%s'.";
   private static final String MESSAGE_EMAIL = "Failed to find user with email: '%s'.";
   private static final String MESSAGE_ALL = "Failed to retrieve all users.";
@@ -21,6 +23,11 @@ public final class PersistenceException extends RuntimeException {
   public static PersistenceException becauseUpdateFailed(
       final String userId, final Throwable cause) {
     return new PersistenceException(String.format(MESSAGE_UPDATE, userId), cause);
+  }
+
+  public static PersistenceException becauseProfilePhotoUpdateFailed(
+      final String userId, final Throwable cause) {
+    return new PersistenceException(String.format(MESSAGE_PROFILE_PHOTO, userId), cause);
   }
 
   public static PersistenceException becauseFindByIdFailed(

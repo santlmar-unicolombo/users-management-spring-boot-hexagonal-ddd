@@ -27,6 +27,7 @@ public class UpdateUserService implements UpdateUserUseCase {
   private final GetUserByIdPort getUserByIdPort;
   private final GetUserByEmailPort getUserByEmailPort;
   private final EmailNotificationService emailNotificationService;
+  private final UserReadModelSyncService userReadModelSyncService;
   private final Validator validator;
 
   @Override
@@ -44,6 +45,7 @@ public class UpdateUserService implements UpdateUserUseCase {
     final UserModel updatedUser = updateUserPort.update(userToUpdate);
 
     emailNotificationService.notifyUserUpdated(updatedUser);
+    userReadModelSyncService.onUserChanged(updatedUser);
 
     return updatedUser;
   }
